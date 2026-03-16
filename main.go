@@ -1,9 +1,17 @@
 package main
 
 import (
-    _ "github.com/prometheus/client_golang/prometheus"
+    "flag"
+
+    "github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
-    return
+    var httpPort = flag.Int("http-port", 8090, "port for the webserver to listen on.")
+    flag.Parse()
+
+    reg := prometheus.NewRegistry()
+//    m := newMetrics(reg)
+
+    nhcexport(reg, httpPort)
 }
