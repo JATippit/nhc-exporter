@@ -2,14 +2,18 @@ package main
 
 import (
     "errors"
+    "os"
     "strings"
 )
 
 //activeFailedCheck := ""
 //failedCheckReran := false 
 /*
-func actOnLine(line string) {
-    if strings.HasPrefix(line, "Running check:") && activeFailedCheck != "" {
+func actOnLine(line string, m *metrics) {
+    if strings.HasPrefix(line, "Node Health Check starting.") {
+        hostname, _ := os.Hostname()
+        m.nhcRunTotal.WithLabelValues(hostname).Inc()
+    } else if strings.HasPrefix(line, "Running check:") && activeFailedCheck != "" {
         if !strings.Contains(line, activeFailedCheck) && failedCheckReran {
             // clear the error
         } else if strings.Contains(line, activeFailedCheck) {
