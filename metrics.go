@@ -7,7 +7,8 @@ import (
 
 type metrics struct {
     nhcNodeState *prometheus.GaugeVec
-    nhcCheckFailureTotal *prometheus.CounterVec
+    nhcRunTotal *prometheus.CounterVec
+    nhcFailureTotal *prometheus.CounterVec
 }
 
 func newMetrics(reg prometheus.Registerer) *metrics {
@@ -19,9 +20,16 @@ func newMetrics(reg prometheus.Registerer) *metrics {
             },
             []string{"node", "check", "reason"},
         ),
-        nhcCheckFailureTotal: promauto.With(reg).NewCounterVec(
+        nhcRunTotal: promauto.With(reg).NewCounterVec(
             prometheus.CounterOpts{
-                Name: "nhc_check_failure_total",
+                Name: "nhc_run_total",
+                Help: "Number of times NHC has run",
+            },
+            []string{"node"},
+        ),
+        nhcFailureTotal: promauto.With(reg).NewCounterVec(
+            prometheus.CounterOpts{
+                Name: "nhc_failure_total",
                 Help: "Per check failure totals",
             },
             []string{"node", "check"},
