@@ -6,17 +6,22 @@ import (
     "strings"
 )
 
-var activeFailedCheck string = ""
-var failedCheckReason string = "All checks passed"
+const (
+    noneFailed = "--none--"
+    passReason = "All checks passed"
+)
+
+var activeFailedCheck string = noneFailed
+var failedCheckReason string = passReason
 var failedCheckReran bool = false
 
-func actOnLine(line string, m *metrics) {
+func actOnLine(line string, m *metrics) error {
     var err error
     hostname, _ := os.Hostname()
 
     if strings.HasPrefix(line, "Node Health Check starting.") {
         m.nhcRunTotal.WithLabelValues(hostname).Inc()
-    } else if strings.HasPrefix(line, "Running check:") && activeFailedCheck != "" {
+    } else if strings.HasPrefix(line, "Running check:") && activeFailedCheck != noneFailed {
         if !strings.Contains(line, activeFailedCheck) && failedCheckReran {
             // clear the error
             m.nhcNodeState.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Set(0)
@@ -29,22 +34,22 @@ func actOnLine(line string, m *metrics) {
         m.nhcNodeState.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Set(0)
         activeFailedCheck, failedCheckReason, err = parseErrorLine(line)
         if err != nil {
-            m.nhcNodeState.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Set(1)
-            m.nhcFailureTotal.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Inc()
+            return err
         }
-        // error handle here
+        m.nhcNodeState.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Set(1)
+        m.nhcFailureTotal.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Inc()
         
     } else if strings.Contains(line, "Node Health Check completed successfully") {
         // clear all the errors
-        if activeFailedCheck != "" {
+        if activeFailedCheck != noneFailed {
             m.nhcNodeState.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Set(0)
         }
-        activeFailedCheck = ""
-        failedCheckReason = "All checks passed"
+        activeFailedCheck = noneFailed
+        failedCheckReason = passReason
         m.nhcNodeState.WithLabelValues(hostname, activeFailedCheck, failedCheckReason).Set(1)
 
     }
-
+    return nil
 }
 
 func parseErrorLine(line string) (string, string, error) {
