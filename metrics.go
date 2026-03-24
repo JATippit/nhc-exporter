@@ -16,7 +16,7 @@ func newMetrics(reg prometheus.Registerer) *metrics {
         nhcNodeState: promauto.With(reg).NewGaugeVec(
             prometheus.GaugeOpts{
                 Name: "nhc_node_state",
-                Help: "NHC state: 0 indicates a check failed, 1 indicates all checks passed.",
+                Help: "NHC node state: 1 indicates active state, 0 indicates inactive",
             },
             []string{"node", "check", "reason"},
         ),
@@ -32,7 +32,7 @@ func newMetrics(reg prometheus.Registerer) *metrics {
                 Name: "nhc_failure_total",
                 Help: "Per check failure totals",
             },
-            []string{"node", "check"},
+            []string{"node", "check", "reason"},
         ),
     }
 
