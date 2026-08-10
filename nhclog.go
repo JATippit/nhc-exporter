@@ -62,3 +62,7 @@ func parseErrorLine(line string) (string, string, error) {
     reason := strings.TrimSpace(parsedLine[4])
     return check, reason, nil
 }
+
+func recordNHC(m *metrics, logPath *string, readTime *int) {
+
+}
