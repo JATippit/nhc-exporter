@@ -2,7 +2,11 @@ package main
 
 import (
     "errors"
+    "strings"
     "testing"
+
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestParseErrorLine(t *testing.T) {
@@ -44,6 +48,56 @@ func TestParseErrorLine(t *testing.T) {
                 prettyPrint(reason))
         }
     }
+}
+
+func TestActOnErrorLine(t *testing.T) {
+    reg := prometheus.NewRegistry()
+    m := newMetrics(reg)
+
+    lines := []string{
+        "Node Health Check starting.",
+        "Running check:  \"check_hw_mem_free 1mb\"",
+        "Running check:  \"check_fs_mount_rw -f /\"",
+        "Running check:  \"check_file_test -r -w -x -d -k /tmp /var/tmp\"",
+        "Running check:  \"check_ps_service -u chrony -S chronyd\"",
+        "Running check:  \"check_file_test -r -s /etc/passwd /etc/group\"",
+        "Running check:  \"check_file_test -c -r -w /dev/null /dev/zero\"",
+        "Running check:  \"check_gpu_count 3\"",
+        "ERROR:  nhc:  Health check failed:  check_gpu_count:  Invalid number of AMD GPUs present.",
+    }
+    for _, line := range lines {
+        _ = actOnLine(line, m)
+    }
+
+    expectedState := `
+# HELP nhc_node_state NHC node state: 1 indicates active state, 0 indicates inactive
+# TYPE nhc_node_state gauge
+nhc_node_state{check="--none--",node="nhc-test",reason="All checks passed"} 0
+nhc_node_state{check="check_gpu_count",node="nhc-test",reason="Invalid number of AMD GPUs present."} 1
+`
+
+    expectedErrCount := `
+# HELP nhc_failure_total Per check failure totals
+# TYPE nhc_failure_total counter
+nhc_failure_total{check="check_gpu_count",node="nhc-test",reason="Invalid number of AMD GPUs present."} 1
+`
+
+    expectedNHCCount := `
+# HELP nhc_run_total Number of times NHC has run
+# TYPE nhc_run_total counter
+nhc_run_total{node="nhc-test"} 1
+`
+
+    if err := testutil.CollectAndCompare(m.nhcNodeState, strings.NewReader(expectedState)); err != nil {
+        t.Errorf("%s", err)
+    }
+    if err := testutil.CollectAndCompare(m.nhcRunTotal, strings.NewReader(expectedNHCCount)); err != nil {
+        t.Errorf("%s", err)
+    }
+    if err := testutil.CollectAndCompare(m.nhcFailureTotal, strings.NewReader(expectedErrCount)); err != nil {
+        t.Errorf("%s", err)
+    }
+
 }
 
 func prettyPrint(val string) string {
