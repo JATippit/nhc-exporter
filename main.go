@@ -1,7 +1,11 @@
 package main
 
 import (
+    "bufio"
+    "context"
     "flag"
+    "log"
+    "os"
 
     "github.com/prometheus/client_golang/prometheus"
 )
@@ -12,9 +16,20 @@ func main() {
     var readTime = flag.Int("read-time", 5, "default time in minutes between log reads.")
     flag.Parse()
 
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    nhcLog, err := os.Open(*logPath)
+    if err != nil {
+        log.Printf("error: %v\n", err)
+        os.Exit(1)
+    }
+    defer nhcLog.Close()
+    r := bufio.NewReader(nhcLog)
+    
     reg := prometheus.NewRegistry()
     m := newMetrics(reg)
-    recordNHC(m, logPath, readTime)
+    recordNHC(ctx, m, r, readTime)
 
-    nhcexport(reg, httpPort)
+    nhcexport(ctx, reg, httpPort)
 }
