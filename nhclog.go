@@ -1,9 +1,14 @@
 package main
 
 import (
+    "bufio"
+    "context"
     "errors"
+    "io"
+    "log"
     "os"
     "strings"
+    "time"
 )
 
 const (
@@ -53,7 +58,7 @@ func actOnLine(line string, m *metrics) error {
 }
 
 func parseErrorLine(line string) (string, string, error) {
-    parsedLine := strings.Split(line, ":")
+    parsedLine := strings.SplitN(line, ":", 5)
     if len(parsedLine) != 5 {
         return "", "", errors.New("unable to parse ERROR line")
     }
@@ -63,6 +68,41 @@ func parseErrorLine(line string) (string, string, error) {
     return check, reason, nil
 }
 
-func recordNHC(m *metrics, logPath *string, readTime *int) {
+func recordNHC(ctx context.Context, m *metrics, r *bufio.Reader, readTime *int) {
+    go func () {
+        var partialLine string
+        var fullLine string
+        hitEOF := false
 
+        for {
+            line, err := r.ReadBytes('\n')
+
+            select {
+            case <-ctx.Done():
+                return
+            default:
+            }
+
+            switch err {
+            case nil:
+                fullLine = string(line)
+                if hitEOF {
+                    fullLine = partialLine + fullLine
+                    partialLine = ""
+                    hitEOF = false
+                }
+                actOnLine(fullLine, m)
+
+            case io.EOF:
+                hitEOF = true
+                if len(string(line)) > 0 {
+                    partialLine = partialLine + string(line)
+                }
+                time.Sleep(time.Duration(*readTime) * time.Second)
+
+            default:
+                log.Printf("unexpected error: %v", err)
+            }
+        }
+    }()
 }

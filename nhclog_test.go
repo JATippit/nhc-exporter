@@ -25,7 +25,7 @@ func TestParseErrorLine(t *testing.T) {
         {"check_ps_service", "Service chronyd (process chronyd) owned by chrony not running; start in progress", nil},
         {"check_gpu_count", "Invalid number of AMD GPUs present.", nil},
         {"", "", errors.New("unable to parse ERROR line")},
-        {"", "", errors.New("unable to parse ERROR line")},
+        {"check_fake_test", "some reason: some other reason", nil},
     }
 
     for i, line := range lines {
