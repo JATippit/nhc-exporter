@@ -6,6 +6,8 @@ import (
     "flag"
     "log"
     "os"
+    "os/signal"
+    "syscall"
 
     "github.com/prometheus/client_golang/prometheus"
 )
@@ -18,11 +20,11 @@ func main() {
 
     hostname, err := os.Hostname()
     if err != nil {
-        log.Printf("err: %v\n", err)
+        log.Printf("error: %v\n", err)
         os.Exit(1)
     }
 
-    ctx, cancel := context.WithCancel(context.Background())
+    ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
     defer cancel()
 
     nhcLog, err := os.Open(*logPath)
@@ -37,5 +39,7 @@ func main() {
     m := newMetrics(reg)
     recordNHC(ctx, hostname, m, r, *readTime)
 
-    nhcexport(ctx, reg, httpPort)
+    if err := nhcexport(ctx, reg, httpPort); err != nil {
+        log.Fatalf("server error: %v", err)
+    }
 }
