@@ -96,7 +96,12 @@ func recordNHC(ctx context.Context, hostname string, m *metrics, r *bufio.Reader
                 if len(string(line)) > 0 {
                     partialLine = partialLine + string(line)
                 }
-                time.Sleep(time.Duration(readTime) * time.Second)
+                select {
+                case <-ctx.Done():
+                    return
+                case <-time.After(time.Duration(readTime) * time.Second):
+                    continue
+                }
 
             default:
                 log.Printf("unexpected error: %v", err)
