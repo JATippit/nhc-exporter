@@ -39,7 +39,7 @@ func main() {
     m := newMetrics(reg)
     recordNHC(ctx, hostname, m, r, *readTime)
 
-    if err := nhcexport(ctx, reg, httpPort); err != nil {
+    if err := nhcexport(ctx, reg, *httpPort); err != nil {
         log.Fatalf("server error: %v", err)
     }
 }

@@ -10,12 +10,12 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func nhcexport(ctx context.Context, reg *prometheus.Registry, httpPort *int) error {
+func nhcexport(ctx context.Context, reg *prometheus.Registry, httpPort int) error {
     mux := http.NewServeMux()
     mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 
     server := &http.Server{
-        Addr:    fmt.Sprintf(":%d", *httpPort),
+        Addr:    fmt.Sprintf(":%d", httpPort),
         Handler: mux,
     }
 
