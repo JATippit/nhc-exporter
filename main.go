@@ -13,7 +13,7 @@ import (
 func main() {
     var httpPort = flag.Int("http-port", 8090, "port for the webserver to listen on.")
     var logPath = flag.String("log-path", "/var/log/nhc.log", "NHC log path")
-    var readTime = flag.Int("read-time", 5, "default time in minutes between log reads.")
+    var readTime = flag.Int("read-time", 5, "default time in seconds between log reads.")
     flag.Parse()
 
     hostname, err := os.Hostname()
@@ -35,7 +35,7 @@ func main() {
     
     reg := prometheus.NewRegistry()
     m := newMetrics(reg)
-    recordNHC(ctx, hostname, m, r, readTime)
+    recordNHC(ctx, hostname, m, r, *readTime)
 
     nhcexport(ctx, reg, httpPort)
 }

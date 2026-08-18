@@ -66,7 +66,7 @@ func parseErrorLine(line string) (string, string, error) {
     return check, reason, nil
 }
 
-func recordNHC(ctx context.Context, hostname string, m *metrics, r *bufio.Reader, readTime *int) {
+func recordNHC(ctx context.Context, hostname string, m *metrics, r *bufio.Reader, readTime int) {
     go func () {
         var partialLine string
         var fullLine string
@@ -96,7 +96,7 @@ func recordNHC(ctx context.Context, hostname string, m *metrics, r *bufio.Reader
                 if len(string(line)) > 0 {
                     partialLine = partialLine + string(line)
                 }
-                time.Sleep(time.Duration(*readTime) * time.Second)
+                time.Sleep(time.Duration(readTime) * time.Second)
 
             default:
                 log.Printf("unexpected error: %v", err)
