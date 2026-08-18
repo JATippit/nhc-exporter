@@ -6,7 +6,6 @@ import (
     "errors"
     "io"
     "log"
-    "os"
     "strings"
     "time"
 )
@@ -20,9 +19,8 @@ var activeFailedCheck string = noneFailed
 var failedCheckReason string = passReason
 var failedCheckReran bool = false
 
-func actOnLine(line string, m *metrics) error {
+func actOnLine(hostname string, line string, m *metrics) error {
     var err error
-    hostname, _ := os.Hostname()
 
     if strings.HasPrefix(line, "Node Health Check starting.") {
         m.nhcRunTotal.WithLabelValues(hostname).Inc()
@@ -68,7 +66,7 @@ func parseErrorLine(line string) (string, string, error) {
     return check, reason, nil
 }
 
-func recordNHC(ctx context.Context, m *metrics, r *bufio.Reader, readTime *int) {
+func recordNHC(ctx context.Context, hostname string, m *metrics, r *bufio.Reader, readTime *int) {
     go func () {
         var partialLine string
         var fullLine string
@@ -91,7 +89,7 @@ func recordNHC(ctx context.Context, m *metrics, r *bufio.Reader, readTime *int) 
                     partialLine = ""
                     hitEOF = false
                 }
-                actOnLine(fullLine, m)
+                actOnLine(hostname, fullLine, m)
 
             case io.EOF:
                 hitEOF = true

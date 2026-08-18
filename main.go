@@ -16,6 +16,12 @@ func main() {
     var readTime = flag.Int("read-time", 5, "default time in minutes between log reads.")
     flag.Parse()
 
+    hostname, err := os.Hostname()
+    if err != nil {
+        log.Printf("err: %v\n", err)
+        os.Exit(1)
+    }
+
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
 
@@ -29,7 +35,7 @@ func main() {
     
     reg := prometheus.NewRegistry()
     m := newMetrics(reg)
-    recordNHC(ctx, m, r, readTime)
+    recordNHC(ctx, hostname, m, r, readTime)
 
     nhcexport(ctx, reg, httpPort)
 }

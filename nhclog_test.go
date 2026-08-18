@@ -66,7 +66,7 @@ func TestActOnErrorLine(t *testing.T) {
         "ERROR:  nhc:  Health check failed:  check_gpu_count:  Invalid number of AMD GPUs present.",
     }
     for _, line := range lines {
-        _ = actOnLine(line, m)
+        _ = actOnLine("nhc-test", line, m)
     }
 
     expectedState := `
